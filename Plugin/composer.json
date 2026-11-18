@@ -1,0 +1,25 @@
+{
+  "name": "iqronix/ai-chatbot",
+  "description": "Production-ready AI Chatbot Plugin for WordPress with RAG, Groq/OpenAI, and native WordPress email notifications",
+  "type": "wordpress-plugin",
+  "license": "GPL-2.0-or-later",
+  "require": {
+    "php": ">=8.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^9.6 || ^10.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "AIChatbot\\": "includes/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "AIChatbot\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "test": "phpunit"
+  }
+}

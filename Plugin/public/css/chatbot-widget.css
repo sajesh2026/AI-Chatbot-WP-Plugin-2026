@@ -1,0 +1,2156 @@
+/**
+ * AI Chatbot Widget Styles
+ * Pure Vanilla CSS with Custom Properties and Accessibility Enhancements
+ */
+
+:root {
+  --ai-primary: #2563eb;
+  --ai-secondary: #1e40af;
+  --ai-bg: #ffffff;
+  --ai-text: #1e293b;
+  --ai-bot-bubble-bg: #f1f5f9;
+  --ai-bot-bubble-text: #0f172a;
+  --ai-user-bubble-bg: #2563eb;
+  --ai-user-bubble-text: #ffffff;
+  --ai-radius: 16px;
+  --ai-font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --ai-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
+  --ai-border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+/* Dark mode overrides if body has dark theme or preset is dark */
+.ai-chatbot-dark {
+  --ai-bg: #0f172a;
+  --ai-text: #f8fafc;
+  --ai-bot-bubble-bg: #1e293b;
+  --ai-bot-bubble-text: #f1f5f9;
+  --ai-border: 1px solid rgba(51, 65, 85, 0.8);
+  --ai-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* ------------------------------------------------------------------
+   Isolation layer.
+   Themes (Astra, GeneratePress, OceanWP…) ship bare element selectors
+   such as `button { padding: 14px 24px; line-height: 1.7em }` and
+   `svg { height: 30px; width: 30px }`. Because those element selectors
+   are less specific than a class, they normally lose — but any theme
+   rule carrying !important, and every presentational HTML attribute
+   such as width="28", still affects us. HTML size attributes always
+   lose to CSS, which is how `svg { width: 30px }` silently resized
+   the launcher icon and made the 60px circle look wrong.
+
+   Everything below the isolation layer therefore relies on class
+   selectors plus explicit !important on the dimensions that must not
+   drift.
+   ------------------------------------------------------------------ */
+.ai-chatbot-window,
+.ai-chatbot-window *,
+.ai-chatbot-launcher-wrapper,
+.ai-chatbot-launcher-wrapper *,
+.ai-chatbot-shortcode-container,
+.ai-chatbot-shortcode-container *,
+.ai-chatbot-block-wrapper,
+.ai-chatbot-block-wrapper *,
+#ai-chatbot-root,
+#ai-chatbot-root * {
+  box-sizing: border-box !important;
+}
+
+.ai-chatbot-window,
+.ai-chatbot-launcher-wrapper {
+  font-family: var(--ai-font);
+  line-height: normal;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ------------------------------------------------------------------
+   Incoming message alert
+   Fired together with the notification sound and the badge update from
+   handleIncomingMessage(), so all three begin on the same frame.
+   ------------------------------------------------------------------ */
+
+@keyframes aiMessageAlert {
+  0% {
+    transform: translateY(6px) scale(0.98);
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.45);
+  }
+  35% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 0 0 6px rgba(37, 99, 235, 0);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+  }
+}
+
+/* Draws the eye to the bubble that just arrived. */
+.ai-message.ai-message-alert .ai-bubble {
+  animation: aiMessageAlert 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Launcher rings while a message waits behind a closed panel. */
+@keyframes aiLauncherAttention {
+  0% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.45), 0 6px 20px rgba(15, 23, 42, 0.18);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgba(37, 99, 235, 0), 0 6px 20px rgba(15, 23, 42, 0.18);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0), 0 6px 20px rgba(15, 23, 42, 0.18);
+  }
+}
+
+.ai-chatbot-launcher-btn.has-attention {
+  animation: aiLauncherAttention 1.6s ease-out 2;
+}
+
+.ai-chatbot-launcher-btn.has-attention::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px solid rgba(37, 99, 235, 0.55);
+  pointer-events: none;
+  animation: aiAttentionFade 1.6s ease-out 2;
+}
+
+@keyframes aiAttentionFade {
+  0% { opacity: 0.9; }
+  100% { opacity: 0; }
+}
+
+/* Floating Launcher Container */
+.ai-chatbot-launcher-wrapper {
+  position: fixed;
+  z-index: 999998;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  pointer-events: none;
+  max-width: calc(100vw - 24px);
+}
+
+.ai-chatbot-pos-bottom_right {
+  bottom: max(20px, calc(16px + env(safe-area-inset-bottom, 0px)));
+  right: max(20px, calc(16px + env(safe-area-inset-right, 0px)));
+}
+.ai-chatbot-pos-bottom_left {
+  bottom: max(20px, calc(16px + env(safe-area-inset-bottom, 0px)));
+  left: max(20px, calc(16px + env(safe-area-inset-left, 0px)));
+  align-items: flex-start;
+}
+.ai-chatbot-pos-top_right {
+  top: max(20px, calc(16px + env(safe-area-inset-top, 0px)));
+  right: max(20px, calc(16px + env(safe-area-inset-right, 0px)));
+}
+.ai-chatbot-pos-top_left {
+  top: max(20px, calc(16px + env(safe-area-inset-top, 0px)));
+  left: max(20px, calc(16px + env(safe-area-inset-left, 0px)));
+  align-items: flex-start;
+}
+
+/* Launcher Button */
+.ai-chatbot-launcher-btn {
+  pointer-events: auto;
+  /* Palette colours are pinned so a theme rule carrying !important
+     (e.g. button { background: ... !important }) cannot repaint the
+     launcher against the configured primary color. */
+  background: var(--ai-primary, #2563eb) !important;
+  color: #ffffff !important;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* No !important here: the aiLauncherAttention keyframes animate
+     box-shadow, and author !important declarations override animation
+     declarations, which would silently kill the notification pulse. */
+  box-shadow: var(--ai-shadow);
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+  outline: none;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+
+  /*
+   * Positioning context for the notification badge, and it must never clip:
+   * the badge is deliberately placed outside the button box.
+   */
+  position: relative;
+  overflow: visible !important;
+
+  /* A flex item can be compressed by its parent, and themes commonly add
+     button padding plus a large line-height. All of that turned the circle
+     into an ellipse, so every one of these is pinned. */
+  flex: 0 0 auto !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: 0 !important;
+  text-indent: 0 !important;
+  box-sizing: border-box !important;
+  -webkit-appearance: none !important;
+  appearance: none !important;
+}
+
+/*
+ * NOTE: overflow is deliberately NOT hidden here.
+ *
+ * It was added earlier to stop the avatar spilling out of the circle, but the
+ * notification badge is positioned outside the button (top/right -3px) and
+ * overflow:hidden chopped those few pixels off, leaving the badge sliced.
+ * The avatar is clipped by its own border-radius instead, which gives the same
+ * result without hiding the badge.
+ */
+
+/* Launcher icon.
+   The icon is an inline <svg> sized by HTML attributes. A bare theme rule
+   such as `svg { width: 30px; height: 30px }` overrides those attributes
+   (CSS always beats presentational HTML attributes), which resized and
+   mis-centred it. Size and stroke are therefore set in CSS. */
+.ai-chatbot-launcher-btn > svg,
+.ai-chatbot-launcher-btn svg {
+  display: block !important;
+  flex: 0 0 auto !important;
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  min-height: 28px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 2 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+  pointer-events: none !important;
+}
+
+/*
+ * Avatar launcher.
+ *
+ * When an avatar is set the launcher shows the same image as the chat header
+ * instead of the default chat icon. Dimensions and radius are pinned per shape
+ * for the same reason as the launcher button itself: theme CSS must not be able
+ * to turn the button into an oval or clip the image badly.
+ */
+.ai-chatbot-launcher-btn.ai-chatbot-launcher-has-avatar {
+  padding: 0 !important;
+  overflow: inherit;
+  background: var(--ai-primary, #2563eb) !important;
+}
+
+.ai-chatbot-launcher-avatar,
+.ai-chatbot-launcher-btn > img.ai-chatbot-launcher-avatar {
+  display: block !important;
+  flex: 0 0 auto !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 100% !important;
+  min-height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  object-fit: cover !important;
+  object-position: center !important;
+  pointer-events: none !important;
+  /* Square by default; each shape clips it below. */
+  border-radius: inherit;
+  background: transparent;
+}
+
+/* Per-shape clipping so the image follows the selected launcher shape. */
+.ai-chatbot-shape-circle .ai-chatbot-launcher-avatar {
+  border-radius: 50% !important;
+}
+
+.ai-chatbot-shape-rounded .ai-chatbot-launcher-avatar {
+  border-radius: 18px !important;
+}
+
+.ai-chatbot-shape-pill .ai-chatbot-launcher-avatar {
+  /* Left-rounded so the pill label still reads as a rounded row. */
+  border-radius: 9999px 0 0 9999px !important;
+}
+
+/* Keep the avatar clear of the focus ring when keyboard navigating. */
+.ai-chatbot-launcher-btn.ai-chatbot-launcher-has-avatar:focus-visible {
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.45);
+}
+
+.ai-chatbot-launcher-btn:hover {
+  transform: scale(1.06);
+  box-shadow: 0 16px 36px rgba(37, 99, 235, 0.35);
+}
+
+.ai-chatbot-launcher-btn:focus-visible {
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.4);
+}
+
+/*
+ * Launcher notification badge.
+ *
+ * The initial state is handled entirely in CSS: the badge ships inside the
+ * launcher markup but inert, meaning hidden, scaled down and aria-hidden.
+ * Revealing it later is therefore a single class toggle with no layout shift,
+ * no reflow of the button, and no flash of unstyled content while JavaScript
+ * boots on the page.
+ */
+.ai-chatbot-badge {
+  position: absolute;
+  /* One offset for every shape. Previously rounded and pill used -4px while the
+     circle used -3px, so the badge visibly jumped when the shape was changed. */
+  top: -4px;
+  right: -4px;
+  min-width: 20px;
+  /* Never let a two or three digit number wrap onto a second line. */
+  max-width: none;
+  height: 20px;
+  padding: 0 6px;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  font-family: var(--ai-font);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  /* No box-shadow ring here on purpose. A separating ring built from the
+     theme colours turned black on dark themes (--ai-primary is #18181b on
+     this site), which read as a black border around the badge. */
+  pointer-events: none;
+  z-index: 2;
+
+  /* Inert by default: the initial state, with no script required. */
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.4);
+  transition: opacity 0.22s ease, transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1),
+    visibility 0s linear 0.28s;
+}
+
+/* Dot mode shrinks to a plain dot. */
+.ai-chatbot-badge.ai-badge-dot {
+  min-width: 12px;
+  width: 12px;
+  height: 12px;
+  padding: 0;
+}
+
+/* Revealed by adding has-badge to the launcher button. */
+.ai-chatbot-launcher-btn.has-badge .ai-chatbot-badge {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+  transition-delay: 0s;
+}
+
+/* One pulse whenever the count grows, so the change is noticed. */
+@keyframes aiBadgePulse {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(1.32); }
+  100% { transform: scale(1); }
+}
+
+.ai-chatbot-badge.ai-badge-pulse {
+  animation: aiBadgePulse 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/*
+ * Launcher shapes.
+ *
+ * Every shape pins the same set of box properties with !important. Previously
+ * only the circle did, so switching to rounded or pill let theme CSS (equal
+ * specificity, later in the cascade, or using !important itself) resize the
+ * button. Because the badge is positioned against the button's padding box, a
+ * button that drifted in size or padding moved the badge with it, which is why
+ * the badge looked wrong only for some shapes.
+ */
+.ai-chatbot-shape-circle {
+  width: 60px !important;
+  height: 60px !important;
+  min-width: 60px !important;
+  min-height: 60px !important;
+  max-width: 60px !important;
+  max-height: 60px !important;
+  aspect-ratio: 1 / 1 !important;
+  border-radius: 50% !important;
+}
+
+.ai-chatbot-shape-rounded {
+  width: 58px !important;
+  height: 58px !important;
+  min-width: 58px !important;
+  min-height: 58px !important;
+  max-width: 58px !important;
+  max-height: 58px !important;
+  aspect-ratio: 1 / 1 !important;
+  border-radius: 18px !important;
+}
+
+.ai-chatbot-shape-pill {
+  height: 52px !important;
+  min-height: 52px !important;
+  max-height: 52px !important;
+  padding: 0 20px !important;
+  border-radius: 9999px !important;
+  gap: 10px !important;
+  font-weight: 600;
+  font-family: var(--ai-font);
+  max-width: calc(100vw - 32px) !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+/*
+ * An avatar launcher pins padding to 0 at higher specificity than the pill rule,
+ * which silently flattened the pill. Restore just enough padding to keep the
+ * capsule shape without inflating it.
+ */
+.ai-chatbot-launcher-btn.ai-chatbot-launcher-has-avatar.ai-chatbot-shape-pill {
+  padding: 0 8px !important;
+}
+
+/* Chat Window Box */
+.ai-chatbot-window {
+  pointer-events: auto;
+  position: fixed;
+  z-index: 999999;
+  width: 380px;
+  max-width: calc(100vw - 32px);
+  height: 620px;
+  max-height: calc(100vh - 40px);
+  background: var(--ai-bg) !important;
+  color: var(--ai-text) !important;
+  border-radius: var(--ai-radius, 20px);
+  box-shadow: var(--ai-shadow) !important;
+  border: var(--ai-border) !important;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: var(--ai-font) !important;
+  opacity: 0;
+  transform: translateY(16px) scale(0.97);
+  pointer-events: none;
+  transform-origin: bottom right;
+  transition: opacity 0.16s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+  contain: layout style;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Keep the window sharp-edged in the corners its own header rounds off. */
+.ai-chatbot-pos-bottom_left .ai-chatbot-window,
+.ai-chatbot-pos-top_left .ai-chatbot-window {
+  transform-origin: bottom left;
+}
+
+.ai-chatbot-window.ai-active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+/* Embedded Mode inside shortcode or block */
+.ai-chatbot-embedded {
+  position: relative !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  opacity: 1 !important;
+  transform: none !important;
+  pointer-events: auto !important;
+  border-radius: var(--ai-radius, 20px);
+  box-shadow: var(--ai-shadow) !important;
+}
+
+/* Header */
+.ai-chatbot-header {
+  position: relative;
+  background: linear-gradient(135deg, var(--ai-primary) 0%, var(--ai-secondary) 100%) !important;
+  color: #ffffff !important;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex: 0 0 auto;
+  border-top-left-radius: var(--ai-radius, 20px);
+  border-top-right-radius: var(--ai-radius, 20px);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset;
+}
+
+.ai-chatbot-header-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+.ai-chatbot-avatar {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  min-height: 38px;
+  flex: 0 0 auto;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 1;
+  color: #fff;
+  overflow: hidden;
+}
+
+.ai-chatbot-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ai-chatbot-header-text {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+.ai-chatbot-header-text h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ai-chatbot-status-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.85);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ai-chatbot-status-dot {
+  width: 8px;
+  height: 8px;
+  min-width: 8px;
+  min-height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #10b981;
+}
+
+.ai-chatbot-status-away { background: #f59e0b; }
+.ai-chatbot-status-offline { background: #94a3b8; }
+
+.ai-chatbot-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.ai-chatbot-action-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 6px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  touch-action: manipulation;
+  transition: background 0.15s, color 0.15s;
+}
+
+.ai-chatbot-action-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+/* Chat Body */
+.ai-chatbot-body {
+  flex: 1 1 auto;
+  /* A flex item defaults to min-height:auto, so a long conversation pushes the
+     panel past its own height instead of scrolling inside it. This was the
+     main desktop layout defect: messages overflowed off the window. */
+  min-height: 0;
+  padding: 16px 20px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--ai-bg) !important;
+}
+
+/* Messages */
+.ai-message {
+  display: flex;
+  flex-direction: column;
+  max-width: 82%;
+  /* Keep long German compound words and bare URLs from widening the panel. */
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  animation: aiFadeIn 0.2s ease-out;
+}
+
+@keyframes aiFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Welcome message entrance.
+   Deliberately simple: a short rise with a touch of scale, running once when
+   the panel opens. Every later reply keeps the lighter aiFadeIn above so the
+   conversation does not feel bouncy. */
+@keyframes aiGreetingIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.ai-message.ai-greeting {
+  animation: aiGreetingIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Starter chips fade in just after the greeting. */
+@keyframes aiChipIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ai-suggested-btn {
+  animation: aiChipIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.ai-message-assistant {
+  align-self: flex-start;
+}
+
+.ai-message-user {
+  align-self: flex-end;
+}
+
+.ai-bubble {
+  padding: 12px 15px;
+  border-radius: var(--ai-radius, 18px);
+  font-size: 14.5px;
+  line-height: 1.55;
+  word-break: break-word;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  /* Visitors paste links; keep them inside the bubble. */
+  overflow-wrap: anywhere;
+}
+
+.ai-message-assistant .ai-bubble {
+  background: var(--ai-bot-bubble-bg) !important;
+  color: var(--ai-bot-bubble-text) !important;
+  border-bottom-left-radius: calc(var(--ai-radius, 18px) / 3);
+}
+
+.ai-message-user .ai-bubble {
+  background: var(--ai-user-bubble-bg) !important;
+  color: var(--ai-user-bubble-text) !important;
+  border-bottom-right-radius: calc(var(--ai-radius, 18px) / 3);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.22);
+}
+
+/* Rendered Markdown inside a bubble */
+.ai-bubble > p {
+  margin: 0 0 8px;
+}
+
+.ai-bubble > p:last-child {
+  margin-bottom: 0;
+}
+
+.ai-bubble > ul,
+.ai-bubble > ol {
+  margin: 6px 0 8px;
+  padding-left: 20px;
+}
+
+.ai-bubble > ul:last-child,
+.ai-bubble > ol:last-child {
+  margin-bottom: 0;
+}
+
+.ai-bubble li {
+  margin-bottom: 5px;
+}
+
+.ai-bubble li:last-child {
+  margin-bottom: 0;
+}
+
+.ai-bubble strong {
+  font-weight: 650;
+}
+
+.ai-bubble code {
+  background: rgba(15, 23, 42, 0.07);
+  padding: 1px 5px;
+  border-radius: 5px;
+  font-size: 0.92em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.ai-bubble pre {
+  margin: 8px 0;
+  padding: 10px 12px;
+  background: rgba(15, 23, 42, 0.08);
+  border-radius: 8px;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.45;
+  box-sizing: border-box;
+  white-space: pre;
+}
+
+.ai-bubble pre code {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+  white-space: inherit;
+  display: block;
+}
+
+.ai-bubble table {
+  width: 100%;
+  max-width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
+}
+
+.ai-bubble th,
+.ai-bubble td {
+  padding: 6px 10px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  text-align: left;
+  min-width: 50px;
+  word-break: normal;
+}
+
+.ai-bubble th {
+  background: rgba(15, 23, 42, 0.06);
+  font-weight: 600;
+}
+
+.ai-bubble blockquote {
+  margin: 6px 0;
+  padding-left: 10px;
+  border-left: 3px solid var(--ai-primary);
+  opacity: 0.85;
+}
+
+.ai-bubble-link {
+  color: inherit;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  word-break: break-all;
+  opacity: 0.95;
+  transition: opacity 0.15s ease;
+}
+
+.ai-message-assistant .ai-bubble-link {
+  color: var(--ai-primary, #2563eb);
+}
+
+.ai-chatbot-dark .ai-message-assistant .ai-bubble-link {
+  color: #60a5fa;
+}
+
+.ai-bubble-link:hover {
+  opacity: 1;
+}
+
+/* Feedback Row */
+.ai-feedback-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 11.5px;
+  color: #94a3b8;
+  opacity: 0.85;
+  transition: opacity 0.18s ease;
+}
+
+.ai-message:hover .ai-feedback-row {
+  opacity: 1;
+}
+
+.ai-feedback-btn {
+  background: none;
+  border: none;
+  padding: 3px 6px;
+  cursor: pointer;
+  color: #94a3b8;
+  border-radius: 6px;
+  line-height: 1;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.ai-feedback-btn:hover {
+  color: var(--ai-primary);
+  background: var(--ai-bot-bubble-bg);
+}
+
+/* ============================================================
+   MESSAGE EDITING
+   Modelled on ChatGPT / Gemini: a hover-revealed pencil on the
+   visitor's own messages, and an inline editor in place of the
+   bubble when one is opened.
+   ============================================================ */
+
+.ai-message-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+/*
+ * Hidden until the message is hovered or the button is focused. Revealed on
+ * focus as well as hover so it is reachable by keyboard: a hover-only control
+ * is invisible to anyone tabbing through the transcript.
+ */
+.ai-message-edit-btn {
+  background: none;
+  border: none;
+  padding: 3px;
+  cursor: pointer;
+  color: #94a3b8;
+  border-radius: 6px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.18s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.ai-message-user:hover .ai-message-edit-btn,
+.ai-message-edit-btn:focus-visible {
+  opacity: 1;
+}
+
+/* Touch devices have no hover, so the pencil stays visible there. */
+@media (hover: none) {
+  .ai-message-edit-btn {
+    opacity: 0.7;
+  }
+}
+
+.ai-message-edit-btn:hover {
+  color: var(--ai-primary);
+  background: var(--ai-bot-bubble-bg);
+}
+
+.ai-message-edit-btn:focus-visible {
+  outline: 2px solid var(--ai-primary);
+  outline-offset: 1px;
+}
+
+/*
+ * While editing, the message spans the full width so the textarea is not
+ * constrained to the width of the original one-line bubble.
+ */
+.ai-message-user.is-editing {
+  max-width: 100%;
+  width: 100%;
+}
+
+.ai-message-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.ai-message-edit-input {
+  width: 100%;
+  box-sizing: border-box;
+  resize: none;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ai-text, #0f172a);
+  background: #ffffff;
+  border: 1px solid var(--ai-primary);
+  border-radius: 10px;
+  padding: 10px 12px;
+  min-height: 44px;
+}
+
+.ai-message-edit-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.16);
+}
+
+.ai-message-edit-hint {
+  font-size: 11.5px;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+
+.ai-message-edit-footer {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/*
+ * Cancel / Send styling.
+ *
+ * These buttons reuse the admin's .ai-btn class names so the markup matches the
+ * rest of the plugin, but those rules live in admin/build/index.css which only
+ * loads inside wp-admin. The widget stylesheet is the only CSS on a public page,
+ * so without a definition here the editor's buttons rendered as unstyled
+ * browser-default buttons.
+ *
+ * The colours come from the widget's own custom properties rather than the
+ * admin palette, so the editor follows the configured theme colour. The admin
+ * hardcodes indigo, which would have ignored a site configured for, say, green.
+ *
+ * Only the two variants the editor uses are defined; the full admin set is not
+ * duplicated here.
+ */
+.ai-message-edit-footer .ai-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1px solid transparent;
+  text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease,
+    box-shadow 0.15s ease, transform 0.1s ease;
+}
+
+.ai-message-edit-footer .ai-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.ai-message-edit-footer .ai-btn:focus-visible {
+  outline: 2px solid var(--ai-primary);
+  outline-offset: 2px;
+}
+
+.ai-message-edit-footer .ai-btn-secondary {
+  background: transparent;
+  color: var(--ai-text);
+  border-color: var(--ai-border);
+}
+
+.ai-message-edit-footer .ai-btn-secondary:hover:not(:disabled) {
+  background: var(--ai-bot-bubble-bg);
+  border-color: var(--ai-primary);
+}
+
+.ai-message-edit-footer .ai-btn-primary {
+  background: var(--ai-primary);
+  color: #ffffff;
+  border-color: var(--ai-primary);
+}
+
+.ai-message-edit-footer .ai-btn-primary:hover:not(:disabled) {
+  background: var(--ai-secondary);
+  border-color: var(--ai-secondary);
+}
+
+/*
+ * Disabled while the text is empty. Left clickable rather than hidden, because
+ * an action that appears and disappears as you type is jarring; the reduced
+ * opacity plus not-allowed cursor says why.
+ */
+.ai-message-edit-footer .ai-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-message-edit-footer .ai-btn {
+    transition: none;
+  }
+}
+
+/* Marks a message the visitor has reworded. */
+.ai-message-user.is-edited .ai-bubble::after {
+  content: 'edited';
+  display: block;
+  margin-top: 4px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-message-edit-btn {
+    transition: none;
+  }
+}
+
+/* Suggested Questions Pills */
+.ai-suggested-questions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+  max-width: 100%;
+}
+
+.ai-suggested-btn {
+  background: #ffffff;
+  color: var(--ai-primary);
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  padding: 8px 13px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  max-width: 100%;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  box-sizing: border-box;
+  touch-action: manipulation;
+  transition: background 0.16s ease, border-color 0.16s ease,
+    transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.ai-suggested-btn:hover {
+  background: #f8faff;
+  border-color: var(--ai-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.14);
+}
+
+.ai-suggested-btn:active {
+  transform: translateY(0);
+}
+
+.ai-chatbot-dark .ai-suggested-btn {
+  background: var(--ai-bot-bubble-bg, #1e293b);
+  color: var(--ai-text, #f8fafc);
+  border-color: rgba(71, 85, 105, 0.8);
+}
+
+.ai-chatbot-dark .ai-suggested-btn:hover {
+  background: rgba(37, 99, 235, 0.15);
+  border-color: var(--ai-primary, #2563eb);
+}
+
+/* Ensure the assistant message container expands to fit the handoff card comfortably */
+.ai-message.has-handoff {
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+/* Human Handoff Card */
+.ai-handoff-card {
+  background: var(--ai-bg, #ffffff);
+  border: 1px solid rgba(203, 213, 225, 0.85);
+  border-radius: var(--ai-radius, 14px);
+  padding: 15px 16px;
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  width: 100%;
+  box-sizing: border-box;
+  box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.07), 0 1px 3px rgba(15, 23, 42, 0.04);
+  animation: aiHandoffFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.ai-chatbot-dark .ai-handoff-card {
+  background: var(--ai-bot-bubble-bg, #1e293b);
+  border-color: rgba(51, 65, 85, 0.9);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+.ai-handoff-card.is-dismissed {
+  opacity: 0;
+  transform: translateY(-4px) scale(0.98);
+  pointer-events: none;
+}
+
+@keyframes aiHandoffFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ai-handoff-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.ai-handoff-icon {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(37, 99, 235, 0.05));
+  color: var(--ai-primary, #2563eb);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.15);
+}
+
+.ai-chatbot-dark .ai-handoff-icon {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(59, 130, 246, 0.1));
+  color: #60a5fa;
+  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.25);
+}
+
+.ai-handoff-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.ai-handoff-title {
+  margin: 0 0 3px 0;
+  font-size: 14.5px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+  color: var(--ai-text, #0f172a);
+}
+
+.ai-handoff-desc {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #64748b;
+}
+
+.ai-chatbot-dark .ai-handoff-desc {
+  color: #94a3b8;
+}
+
+.ai-handoff-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: stretch;
+  gap: 8px;
+  margin-top: 4px;
+  width: 100%;
+}
+
+.ai-handoff-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none !important;
+  box-sizing: border-box;
+  outline: none;
+  min-height: 38px;
+  transition: all 0.16s ease;
+  user-select: none;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.ai-handoff-btn-svg {
+  flex-shrink: 0;
+}
+
+.ai-handoff-btn-primary {
+  background: var(--ai-primary, #2563eb);
+  color: #ffffff !important;
+  border: 1px solid transparent;
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.3);
+}
+
+.ai-handoff-btn-primary:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.38);
+  color: #ffffff !important;
+}
+
+.ai-handoff-btn-primary:focus-visible {
+  outline: 2px solid var(--ai-primary, #2563eb);
+  outline-offset: 2px;
+}
+
+.ai-handoff-btn-primary:active {
+  transform: translateY(0);
+}
+
+.ai-handoff-btn-secondary {
+  background: #f8fafc;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+.ai-chatbot-dark .ai-handoff-btn-secondary {
+  background: rgba(30, 41, 59, 0.6);
+  border-color: #475569;
+  color: #cbd5e1;
+}
+
+.ai-handoff-btn-secondary:hover {
+  background: #ffffff;
+  border-color: #94a3b8;
+  color: var(--ai-text, #1e293b);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+.ai-chatbot-dark .ai-handoff-btn-secondary:hover {
+  background: #334155;
+  border-color: #64748b;
+  color: #f8fafc;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.ai-handoff-btn-secondary:focus-visible {
+  outline: 2px solid var(--ai-primary, #2563eb);
+  outline-offset: 2px;
+}
+
+/* Email Handoff Tray (Webmail & Copy feedback for PC) */
+.ai-handoff-email-tray {
+  margin-top: 10px;
+  padding: 11px 13px;
+  background: rgba(37, 99, 235, 0.06);
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  font-size: 12.5px;
+  animation: aiChipIn 0.22s ease both;
+  box-sizing: border-box;
+}
+
+.ai-chatbot-dark .ai-handoff-email-tray {
+  background: rgba(30, 41, 59, 0.7);
+  border-color: rgba(71, 85, 105, 0.6);
+}
+
+.ai-handoff-email-copied-bar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ai-text, #1e293b);
+  font-size: 12px;
+  line-height: 1.4;
+  word-break: break-all;
+}
+
+.ai-handoff-email-copied-bar strong {
+  color: var(--ai-primary, #2563eb);
+  font-weight: 600;
+}
+
+.ai-handoff-webmail-options {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ai-webmail-option-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  background: #ffffff !important;
+  color: #1e293b !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none !important;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  line-height: 1.4;
+}
+
+.ai-webmail-option-btn span {
+  color: inherit !important;
+}
+
+.ai-webmail-option-btn:visited {
+  color: #1e293b !important;
+}
+
+.ai-webmail-option-btn:hover {
+  background: var(--ai-primary, #2563eb) !important;
+  color: #ffffff !important;
+  border-color: var(--ai-primary, #2563eb) !important;
+  transform: translateY(-1px);
+}
+
+.ai-webmail-option-btn:hover span {
+  color: #ffffff !important;
+}
+
+.ai-webmail-option-btn:focus-visible {
+  outline: 2px solid var(--ai-primary, #2563eb);
+  outline-offset: 1px;
+}
+
+.ai-chatbot-dark .ai-webmail-option-btn {
+  background: #1e293b !important;
+  color: #f1f5f9 !important;
+  border-color: #475569 !important;
+}
+
+.ai-chatbot-dark .ai-webmail-option-btn:visited {
+  color: #f1f5f9 !important;
+}
+
+.ai-chatbot-dark .ai-webmail-option-btn:hover {
+  background: var(--ai-primary, #2563eb) !important;
+  color: #ffffff !important;
+  border-color: var(--ai-primary, #2563eb) !important;
+}
+
+@media (max-width: 480px) {
+  .ai-message.has-handoff {
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  .ai-handoff-card {
+    padding: 14px;
+    gap: 12px;
+  }
+
+  .ai-handoff-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: stretch;
+    gap: 7px;
+    width: 100%;
+  }
+
+  .ai-handoff-btn {
+    width: 100%;
+    min-height: 38px;
+    padding: 8px 6px;
+    font-size: 12px;
+    gap: 5px;
+  }
+}
+
+@media (max-width: 320px) {
+  .ai-handoff-actions {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+}
+
+/* Contact Human Card (Legacy compatibility) */
+.ai-contact-human-card {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 100%;
+  box-sizing: border-box;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.ai-contact-btn {
+  background: #16a34a;
+  color: #fff;
+  border: none;
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  align-self: flex-start;
+  box-shadow: 0 1px 2px rgba(22, 163, 74, 0.3);
+  transition: background 0.16s ease, transform 0.12s ease, box-shadow 0.16s ease;
+}
+
+.ai-contact-btn:hover {
+  background: #15803d;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.28);
+}
+
+/* Thinking Indicator */
+.ai-typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 12px 16px;
+  background: var(--ai-bot-bubble-bg);
+  border-radius: var(--ai-radius);
+  width: fit-content;
+}
+
+.ai-typing-dot {
+  width: 7px;
+  height: 7px;
+  min-width: 7px;
+  min-height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #94a3b8;
+  animation: aiBounce 1.4s infinite ease-in-out both;
+}
+
+.ai-typing-dot:nth-child(1) { animation-delay: -0.32s; }
+.ai-typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes aiBounce {
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1.0); }
+}
+
+/* Visually hidden, still announced by screen readers. */
+.ai-chatbot-sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Composer
+   --------------------------------------------------------------------------
+   The field itself never paints a border or outline, in any state. Focus is
+   signalled by the shell's box-shadow instead, which keeps WCAG 2.4.7 satisfied
+   without putting a ring on the input. */
+.ai-chatbot-footer {
+  /* Never let the composer be squeezed or pushed out of view. */
+  flex: 0 0 auto;
+  padding: 12px 16px 14px;
+  border-top: var(--ai-border) !important;
+  background: var(--ai-bg) !important;
+}
+
+.ai-chatbot-composer-meta {
+  /* No reserved height, so the composer does not jump when the counter
+     appears near the character limit. */
+  min-height: 0;
+}
+
+.ai-chatbot-char-count {
+  display: block;
+  margin-top: 7px;
+  padding-right: 4px;
+  text-align: right;
+  font-size: 11.5px;
+  line-height: 1;
+  color: var(--ai-text);
+  opacity: 0.6;
+  transition: color 0.2s;
+}
+
+.ai-chatbot-char-count[hidden] {
+  display: none;
+}
+
+.ai-chatbot-char-count.ai-warn {
+  color: #b91c1c;
+  opacity: 1;
+  font-weight: 600;
+}
+
+/* The 1px transparent border is permanent and its colour never changes. It
+   reserves the space the focus ring occupies so focusing causes no layout
+   shift, and it guarantees no border is ever painted. */
+.ai-input-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 7px 7px 7px 18px;
+  background: var(--ai-bot-bubble-bg);
+  border: 1px solid transparent;
+  /* Pill for a single line, rounded rectangle once the field grows, so the
+     corners never clip the text at the ends. */
+  border-radius: 24px;
+  /* Resting elevation, so the composer reads as an interactive surface rather
+     than flat chrome. */
+  box-shadow: 0 1px 2px rgb(15 23 42 / 6%), 0 2px 8px rgb(15 23 42 / 4%);
+  transition: box-shadow 0.22s ease, background-color 0.22s ease;
+}
+
+.ai-input-form:hover {
+  box-shadow: 0 2px 4px rgb(15 23 42 / 7%), 0 6px 16px rgb(15 23 42 / 6%);
+}
+
+.ai-input-form:focus-within {
+  background: var(--ai-bg);
+  /* 3px spread sits outside the box, so the ring cannot shift layout. */
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ai-primary) 28%, transparent),
+              0 4px 14px rgb(15 23 42 / 7%);
+}
+
+/* Two classes of specificity so this beats the site's global
+   `html body textarea` and `html body textarea:focus` rules, which were
+   painting a second, theme-coloured focus ring on the composer. */
+.ai-chatbot-window .ai-chatbot-input {
+  flex: 1 1 auto;
+  /* Without min-width:0 a long pasted value expands the field and pushes the
+     send button outside the composer. */
+  min-width: 0;
+  width: 100%;
+  /* Grows with its content via JS, capped here so a very long message scrolls
+     inside the field instead of eating the whole panel. */
+  max-height: 112px;
+  overflow-y: auto;
+  border: 0;
+  border-style: none;
+  border-width: 0;
+  background: transparent;
+  box-shadow: none;
+  outline: 0;
+  outline-offset: 0;
+  /* Removes the browser's inner padding/growth so the JS height calculation
+     and the CSS padding agree. */
+  resize: none;
+  display: block;
+  font-size: 14.5px;
+  line-height: 1.45;
+  color: var(--ai-text) !important;
+  font-family: inherit;
+  padding: 8px 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ai-text) !important;
+  caret-color: var(--ai-primary) !important;
+}
+
+/* Belt and braces. Astra generates a dotted focus border from the
+   site-accessibility-highlight-input-type option and prints it inline in
+   wp_head, so :focus, :active and :focus-visible all have to be covered. */
+.ai-chatbot-window .ai-chatbot-input:focus,
+.ai-chatbot-window .ai-chatbot-input:active,
+.ai-chatbot-window .ai-chatbot-input:focus-visible {
+  border: 0;
+  border-style: none;
+  border-width: 0;
+  outline: 0;
+  box-shadow: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.ai-chatbot-window .ai-chatbot-input::placeholder {
+  color: var(--ai-text) !important;
+  opacity: 0.55;
+}
+
+/* Three classes of specificity replaces the !important flags this rule used to
+   need against generic theme button styling. */
+.ai-chatbot-window .ai-chatbot-footer .ai-chatbot-send-btn {
+  flex: 0 0 auto;
+  width: 38px;
+  min-width: 38px;
+  height: 38px;
+  min-height: 38px;
+  padding: 0;
+  line-height: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
+  /* Locks the circle: theme button padding previously turned this into an
+     oval, which box-sizing alone does not prevent. */
+  aspect-ratio: 1 / 1;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Keep the send button pinned to the bottom edge as the field grows. */
+  align-self: flex-end;
+  color: #fff !important;
+  background: var(--ai-primary, #2563eb) !important;
+  /* Colour plus depth, so the button reads as the primary action. */
+  box-shadow: 0 1px 2px rgb(15 23 42 / 14%),
+              0 2px 6px color-mix(in srgb, var(--ai-primary, #2563eb) 32%, transparent);
+  transition: transform 0.16s ease, background-color 0.16s ease,
+              box-shadow 0.16s ease, opacity 0.16s ease;
+}
+
+/* Send icon must not be resized by generic theme svg rules. */
+.ai-chatbot-window .ai-chatbot-footer .ai-chatbot-send-btn > svg,
+.ai-chatbot-window .ai-chatbot-footer .ai-chatbot-send-btn svg {
+  display: block;
+  width: 18px;
+  min-width: 18px;
+  height: 18px;
+  min-height: 18px;
+  margin: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.ai-chatbot-window .ai-chatbot-footer .ai-chatbot-send-btn:hover:not(:disabled) {
+  background: var(--ai-secondary) !important;
+  transform: scale(1.06);
+}
+
+.ai-chatbot-window .ai-chatbot-footer .ai-chatbot-send-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+/* Keyboard focus needs its own ring; :focus alone would double up with the
+   composer's :focus-within ring. */
+.ai-chatbot-window .ai-chatbot-footer .ai-chatbot-send-btn:focus-visible {
+  outline: 2px solid var(--ai-primary, #2563eb) !important;
+  outline-offset: 2px;
+}
+
+.ai-chatbot-window .ai-chatbot-footer .ai-chatbot-send-btn:disabled {
+  /* Disabled state is the initial one, so it must be visibly inert rather than
+     looking like a live button. */
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  background: color-mix(in srgb, var(--ai-primary, #2563eb) 40%, #ffffff) !important;
+  box-shadow: none;
+}
+
+/* Stop control
+   --------------------------------------------------------------------------
+   While a reply is pending the send button becomes Stop. Both icons are always
+   in the DOM and one is hidden, so the swap costs nothing and cannot leave the
+   button with no icon. The neutral tone deliberately differs from the accent
+   send state, so it reads as "halt" rather than "go". */
+.ai-chatbot-window .ai-chatbot-footer .ai-chatbot-send-btn .ai-stop-icon {
+  display: none;
+}
+
+.ai-chatbot-window .ai-chatbot-footer .ai-chatbot-send-btn.is-busy .ai-send-icon {
+  display: none;
+}
+
+.ai-chatbot-window .ai-chatbot-footer .ai-chatbot-send-btn.is-busy .ai-stop-icon {
+  display: block;
+  fill: currentColor;
+}
+
+.ai-chatbot-window .ai-chatbot-footer .ai-chatbot-send-btn.is-busy {
+  background: #64748b;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 14%), 0 2px 6px rgb(15 23 42 / 12%);
+}
+
+.ai-chatbot-window .ai-chatbot-footer .ai-chatbot-send-btn.is-busy:hover:not(:disabled) {
+  background: #475569;
+}
+
+/* Cancelled request
+   --------------------------------------------------------------------------
+   Not an assistant bubble: nothing was actually said, so it must not sit in the
+   transcript looking like a reply. Centred and muted to read as system state. */
+.ai-cancelled-notice {
+  /* align-self centres and shrink-wraps, because the chat body is a column
+     flex container. */
+  align-self: center;
+  margin: 6px 0;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--ai-text) !important;
+  opacity: 0.65;
+  background: color-mix(in srgb, var(--ai-text) 8%, transparent) !important;
+}
+
+/* Contact Modal */
+.ai-modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 1000000;
+  backdrop-filter: blur(2px);
+  box-sizing: border-box;
+}
+
+.ai-modal-card {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 20px;
+  width: 100%;
+  max-width: min(340px, calc(100vw - 32px));
+  max-height: calc(100% - 32px);
+  overflow-y: auto;
+  box-sizing: border-box;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+.ai-modal-card h4 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  color: #0f172a;
+}
+
+.ai-form-group {
+  margin-bottom: 10px;
+}
+
+.ai-form-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #475569;
+}
+
+.ai-form-input, .ai-form-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.ai-form-textarea {
+  resize: vertical;
+  height: 60px;
+}
+
+.ai-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+/* Images inside chat bubbles: fit the bubble, click to preview */
+.ai-bubble-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 6px 0;
+  cursor: zoom-in;
+}
+
+/* Full-screen image preview opened by clicking a bubble image */
+.ai-image-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1000001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.92);
+  cursor: zoom-out;
+}
+
+.ai-image-lightbox img {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 8px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  cursor: default;
+}
+
+/* Right-To-Left (RTL) Support */
+[dir="rtl"] .ai-chatbot-pos-bottom_right {
+  right: auto;
+  left: max(20px, calc(16px + env(safe-area-inset-left, 0px)));
+}
+[dir="rtl"] .ai-chatbot-pos-bottom_left {
+  left: auto;
+  right: max(20px, calc(16px + env(safe-area-inset-right, 0px)));
+}
+[dir="rtl"] .ai-message-assistant .ai-bubble {
+  border-bottom-left-radius: var(--ai-radius);
+  border-bottom-right-radius: 4px;
+}
+[dir="rtl"] .ai-message-user .ai-bubble {
+  border-bottom-right-radius: var(--ai-radius);
+  border-bottom-left-radius: 4px;
+}
+
+/* Lock background scrolling when chatbot is open in mobile fullscreen */
+html.ai-chatbot-mobile-open,
+body.ai-chatbot-mobile-open {
+  position: fixed !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+  touch-action: none !important;
+}
+
+/* Embedded Mode containers: ensure responsiveness */
+.ai-chatbot-shortcode-container,
+.ai-chatbot-block-wrapper {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 480px) {
+  .ai-chatbot-shortcode-container,
+  .ai-chatbot-block-wrapper {
+    height: min(600px, 85vh) !important;
+    margin: 10px auto !important;
+  }
+}
+
+/* Mobile Fullscreen Adaptation:
+   Matches all mobile devices in portrait (up to 600px) and landscape (up to 960px with max-height 500px).
+   Uses dynamic viewport variables (--ai-viewport-height and --ai-viewport-top) set by the Visual Viewport API
+   so the window resizes smoothly when the virtual keyboard opens without pushing the header or input off screen. */
+@media (max-width: 600px), ((max-height: 500px) and (max-width: 960px)) {
+  .ai-chatbot-window:not(.ai-chatbot-embedded) {
+    position: fixed !important;
+    top: var(--ai-viewport-top, 0px) !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: var(--ai-viewport-height, 100dvh) !important;
+    max-height: var(--ai-viewport-height, 100dvh) !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    z-index: 999999 !important;
+    transform: none !important;
+  }
+
+  /* Fallback for browsers without dvh support */
+  @supports not (height: 100dvh) {
+    .ai-chatbot-window:not(.ai-chatbot-embedded) {
+      height: var(--ai-viewport-height, 100%) !important;
+      max-height: var(--ai-viewport-height, 100%) !important;
+    }
+  }
+
+  /* 1. Header: Fixed non-shrinking flex item at top */
+  .ai-chatbot-window:not(.ai-chatbot-embedded) .ai-chatbot-header {
+    flex: 0 0 auto !important;
+    position: relative !important;
+    top: 0 !important;
+    z-index: 10 !important;
+    width: 100% !important;
+    min-height: 52px !important;
+    box-sizing: border-box !important;
+    border-radius: 0 !important;
+    border-top-left-radius: 0 !important;
+    border-top-right-radius: 0 !important;
+    padding-top: calc(12px + env(safe-area-inset-top, 0px)) !important;
+    padding-bottom: 12px !important;
+    padding-left: calc(16px + env(safe-area-inset-left, 0px)) !important;
+    padding-right: calc(16px + env(safe-area-inset-right, 0px)) !important;
+  }
+
+  .ai-chatbot-window:not(.ai-chatbot-embedded) .ai-chatbot-header-text h3 {
+    font-size: 15px !important;
+    line-height: 1.25 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  /* 2. Conversation Area: Independent scrolling, contained, non-overflowing */
+  .ai-chatbot-window:not(.ai-chatbot-embedded) .ai-chatbot-body {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    height: auto !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior-y: contain !important;
+    -webkit-overflow-scrolling: touch !important;
+    padding: 14px 12px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+
+  /* 3. Suggested Questions on mobile: Wrap safely on narrow screens */
+  .ai-chatbot-window:not(.ai-chatbot-embedded) .ai-suggested-questions {
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    margin-top: 4px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .ai-chatbot-window:not(.ai-chatbot-embedded) .ai-suggested-btn {
+    flex: 0 1 auto !important;
+    max-width: 100% !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+    font-size: 13px !important;
+    padding: 7px 12px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* 4. Input Footer: Non-shrinking, pinned to bottom with safe-area support */
+  .ai-chatbot-window:not(.ai-chatbot-embedded) .ai-chatbot-footer {
+    flex: 0 0 auto !important;
+    position: relative !important;
+    z-index: 10 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    padding-top: 10px !important;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-left: calc(14px + env(safe-area-inset-left, 0px)) !important;
+    padding-right: calc(14px + env(safe-area-inset-right, 0px)) !important;
+    background: var(--ai-bg) !important;
+  }
+
+  /* Keyboard open: safe-area bottom is absorbed by keyboard height */
+  .ai-chatbot-window.ai-keyboard-open:not(.ai-chatbot-embedded) .ai-chatbot-footer {
+    padding-bottom: 8px !important;
+  }
+
+  /* Message bubbles on mobile */
+  .ai-message {
+    max-width: 90% !important;
+    box-sizing: border-box !important;
+  }
+
+  .ai-bubble {
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* 16px font-size prevents iOS Safari automatic page zoom on focus */
+  .ai-chatbot-window .ai-chatbot-input,
+  .ai-message-edit-input {
+    font-size: 16px !important;
+    line-height: 1.4 !important;
+    max-height: 96px !important;
+  }
+
+  .ai-input-form {
+    padding: 6px 6px 6px 14px !important;
+    gap: 6px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+/* Extra compact spacing for mobile landscape mode */
+@media (max-height: 500px) and (max-width: 960px) {
+  .ai-chatbot-window:not(.ai-chatbot-embedded) .ai-chatbot-header {
+    padding-top: calc(6px + env(safe-area-inset-top, 0px)) !important;
+    padding-bottom: 6px !important;
+    min-height: 44px !important;
+  }
+
+  .ai-chatbot-avatar {
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    min-height: 30px !important;
+    font-size: 13px !important;
+  }
+
+  .ai-chatbot-header-text h3 {
+    font-size: 14px !important;
+  }
+
+  .ai-chatbot-header-actions .ai-chatbot-action-btn {
+    min-width: 30px !important;
+    min-height: 30px !important;
+    padding: 4px !important;
+  }
+
+  .ai-chatbot-window:not(.ai-chatbot-embedded) .ai-chatbot-body {
+    padding: 8px 10px !important;
+    gap: 8px !important;
+  }
+
+  .ai-chatbot-window:not(.ai-chatbot-embedded) .ai-chatbot-footer {
+    padding-top: 6px !important;
+    padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .ai-chatbot-window.ai-keyboard-open:not(.ai-chatbot-embedded) .ai-chatbot-footer {
+    padding-bottom: 6px !important;
+  }
+
+  .ai-chatbot-window .ai-chatbot-input {
+    max-height: 60px !important;
+    padding: 4px 0 !important;
+  }
+}
+
+/* ------------------------------------------------------------------
+   Desktop refinements
+   ------------------------------------------------------------------ */
+
+/* Short desktop viewports: keep the panel on screen and let the body scroll. */
+@media (min-width: 601px) and (max-height: 700px) {
+  .ai-chatbot-window:not(.ai-chatbot-embedded) {
+    height: calc(100vh - 120px) !important;
+    max-height: calc(100vh - 120px) !important;
+  }
+}
+
+/* Wide desktops: give the panel a little more room to read comfortably. */
+@media (min-width: 1600px) {
+  .ai-chatbot-window:not(.ai-chatbot-embedded) {
+    width: 420px;
+    height: 680px;
+  }
+}
+
+/* Respect users who prefer reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+.ai-chatbot-badge.ai-badge-pulse {
+    animation: none !important;
+  }
+
+  /* Incoming message alert: keep the state cue, drop the movement. */
+  .ai-message.ai-message-alert .ai-bubble {
+    animation: none !important;
+  }
+
+  .ai-chatbot-launcher-btn.has-attention,
+  .ai-chatbot-launcher-btn.has-attention::after {
+    animation: none !important;
+  }
+
+  .ai-chatbot-launcher-btn.has-attention::after {
+    opacity: 0.9;
+  }
+
+  .ai-chatbot-window,
+  .ai-chatbot-launcher-btn,
+  .ai-chatbot-send-btn,
+  .ai-input-form,
+  .ai-chatbot-char-count,
+  .ai-message,
+  .ai-message.ai-greeting,
+  .ai-suggested-btn,
+  .ai-handoff-card,
+  .ai-typing-dot {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  /* Staggered delays are also motion, so drop them. */
+  .ai-suggested-btn {
+    animation-delay: 0s !important;
+  }
+
+  .ai-chatbot-window.ai-active,
+  .ai-chatbot-window {
+    transform: none !important;
+  }
+}

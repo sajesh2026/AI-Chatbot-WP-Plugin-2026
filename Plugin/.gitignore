@@ -1,0 +1,32 @@
+# WordPress plugin development
+/vendor/
+/node_modules/
+/admin/build/
+
+# Test artifacts
+/tests/coverage/
+/.phpunit.result.cache
+phpunit.xml
+
+# Verification scripts. These bootstrap the real WordPress runtime and write to
+# the live database, so they are run deliberately rather than committed.
+/smoke-*.php
+
+# IDE & OS
+.idea/
+.vscode/
+*.DS_Store
+Thumbs.db
+
+# Composer
+composer.lock
+
+# Environment
+*.env
+*.env.local
+
+# Build artifacts
+*.zip
+
+# Log files
+*.log
